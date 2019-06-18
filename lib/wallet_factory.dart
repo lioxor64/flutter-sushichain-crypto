@@ -168,12 +168,13 @@ class WalletFactory {
     }
   }
 
- Either<WalletError, EncryptedWallet> encryptWallet(BasicWallet wallet, String password) {
+  Either<WalletError, EncryptedWallet> encryptWallet(
+      BasicWallet wallet, String password) {
     try {
       String walletJson = json.encode(wallet);
 
       var key = _toSha256I(password);
-      var iv = _toSha256I(walletJson).sublist(0,16);
+      var iv = _toSha256I(walletJson).sublist(0, 16);
       CipherParameters params = new PaddedBlockCipherParameters(
           new ParametersWithIV(new KeyParameter(key), iv), null);
 
@@ -182,8 +183,29 @@ class WalletFactory {
       Uint8List encrypted = encryptionCipher.process(utf8.encode(walletJson));
       String cipherText = hex.encode(encrypted);
 
-      return right(EncryptedWallet("flutter",cipherText, wallet.address, hex.encode(iv)));
+      return right(EncryptedWallet(
+          "flutter", cipherText, wallet.address, hex.encode(iv)));
+    } catch (e) {
+      return left(WalletError(e.toString()));
+    }
+  }
 
+  Either<WalletError, BasicWallet> decryptWallet(
+      EncryptedWallet wallet, String password) {
+    try {
+      var key = _toSha256I(password);
+      var iv = hex.decode(wallet.salt);
+      var message = hex.decode(wallet.cipherText);
+
+      CipherParameters params = new PaddedBlockCipherParameters(
+          new ParametersWithIV(new KeyParameter(key), iv), null);
+
+      BlockCipher decryptionCipher = new PaddedBlockCipher("AES/CBC/PKCS7");
+      decryptionCipher.init(false, params);
+      String decrypted = utf8.decode(decryptionCipher.process(message));
+      Map map = jsonDecode(decrypted);
+      BasicWallet basicWallet = BasicWallet.fromJson(map);
+      return right(basicWallet);
     } catch (e) {
       return left(WalletError(e.toString()));
     }
