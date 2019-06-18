@@ -166,7 +166,7 @@ void main() {
 
       if(maybeEnc.isRight()){
         EncryptedWallet wallet = maybeEnc.toIterable().first;
-        print(wallet);
+        print(wallet.toJson());
       } else {
         fail('Error: ' + maybeEnc.swap().toIterable().first.message);
       }

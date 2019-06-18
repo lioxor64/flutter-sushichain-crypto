@@ -173,6 +173,27 @@ class WalletFactory {
     try {
       String walletJson = json.encode(wallet);
 
+      var key = _toSha256I(password);
+      var iv = _toSha256I(walletJson).sublist(0,16);
+      CipherParameters params = new PaddedBlockCipherParameters(
+          new ParametersWithIV(new KeyParameter(key), iv), null);
+
+      BlockCipher encryptionCipher = new PaddedBlockCipher("AES/CBC/PKCS7");
+      encryptionCipher.init(true, params);
+      Uint8List encrypted = encryptionCipher.process(utf8.encode(walletJson));
+      String cipherText = hex.encode(encrypted);
+
+      return right(EncryptedWallet("flutter",cipherText, wallet.address, hex.encode(iv)));
+
+    } catch (e) {
+      return left(WalletError(e.toString()));
+    }
+  }
+
+  Future<Either<WalletError, EncryptedWallet>> encryptWallet2(BasicWallet wallet, String password) async {
+    try {
+      String walletJson = json.encode(wallet);
+
       final cryptor = new PlatformStringCryptor();
       final String salt = await cryptor.generateSalt();
       final String key = await cryptor.generateKeyFromPassword(password, salt);
@@ -213,6 +234,11 @@ class WalletFactory {
   String _toSha256(String message) {
     List<int> bytes = utf8.encode(message);
     return sha256.convert(bytes).toString();
+  }
+
+  List<int> _toSha256I(String message) {
+    List<int> bytes = utf8.encode(message);
+    return sha256.convert(bytes).bytes;
   }
 
   String _toBase64(String message) {
