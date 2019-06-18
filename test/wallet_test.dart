@@ -1,18 +1,15 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sushichain/network.dart';
-import 'package:sushichain/wallet_error.dart';
 import 'package:sushichain/wallet_factory.dart';
 
+import 'test_helper.dart';
+
 void main() {
-
-  void handleError(WalletError error){
-    fail(error.message);
-  }
-
+  
   test('can generate a new wallet', () {
     final walletFactory = WalletFactory();
-    walletFactory.generateNewWallet(Network.testnet).fold(handleError,(basicWallet){
+    walletFactory.generateNewWallet(Network.testnet).fold(TestHelper.handleError,(basicWallet){
       expect(basicWallet.hexPublicKey.length, 130);
       expect(basicWallet.wif.length,           96);
       expect(basicWallet.address.length,       64);
@@ -25,7 +22,7 @@ void main() {
     String networkPrefix = 'M0';
     String expectedWif   = 'TTBmOTI5MTNmMzU1NTM5YTZlYzYxMjliNzQ0YTllMWRjYjRkM2M4ZGYyOWNjY2I4MDY2ZDU3YzQ1NGNlYWQ2ZmU0MjdlYzNl';
 
-    walletFactory.generateWif(hexPrivateKey, networkPrefix).fold(handleError, (wif){
+    walletFactory.generateWif(hexPrivateKey, networkPrefix).fold(TestHelper.handleError, (wif){
       expect(wif,expectedWif);
     });
   });
@@ -36,7 +33,7 @@ void main() {
     String networkPrefix   = 'M0';
     String expectedAddress = 'TTAzZGQxYzhmMDMyYmFhM2VmZDBmNTI5YTRmNTY0MjVhOWI3NjljOGYwODgyNDlk';
 
-    walletFactory.generateAddress(hexPublicKey, networkPrefix).fold(handleError, (address){
+    walletFactory.generateAddress(hexPublicKey, networkPrefix).fold(TestHelper.handleError, (address){
       expect(address, expectedAddress);
     });
   });
@@ -47,7 +44,7 @@ void main() {
     String expectedPrivateKey = 'f92913f355539a6ec6129b744a9e1dcb4d3c8df29cccb8066d57c454cead6fe4';
     String expectedNetwork    = 'M0';
 
-    walletFactory.getPrivateKeyAndNetworkFromWif(wif).fold(handleError, (nwpk){
+    walletFactory.getPrivateKeyAndNetworkFromWif(wif).fold(TestHelper.handleError, (nwpk){
       expect(nwpk.value1, expectedPrivateKey);
       expect(nwpk.value2, expectedNetwork);
     });
@@ -55,10 +52,10 @@ void main() {
 
   test('can get publickey from privatekey', () {
     final walletFactory            = WalletFactory();
-    walletFactory.generateKeyPair().fold(handleError, (kp){
+    walletFactory.generateKeyPair().fold(TestHelper.handleError, (kp){
       String expectedHexPublicKey  = kp.hexPublicKey;
       String hexPrivateKey         = kp.hexPrivateKey;
-      walletFactory.getPublicKeyFromPrivateKey(hexPrivateKey).fold(handleError, (hexPublicKey){
+      walletFactory.getPublicKeyFromPrivateKey(hexPrivateKey).fold(TestHelper.handleError, (hexPublicKey){
         expect(hexPublicKey, expectedHexPublicKey);
       });
     });
@@ -67,18 +64,18 @@ void main() {
   test('can get basic wallet from wif', () {
     final walletFactory = WalletFactory();
 
-    walletFactory.generateKeyPair().fold(handleError, (kp) {
+    walletFactory.generateKeyPair().fold(TestHelper.handleError, (kp) {
       String hexPublicKey = kp.hexPublicKey;
       String hexPrivateKey = kp.hexPrivateKey;
 
       Either.map2(walletFactory.generateWif(hexPrivateKey, 'M0'),
           walletFactory.generateAddress(hexPublicKey, 'M0'),
               (wif, address) => Tuple2(wif, address))
-          .fold(handleError, (wa) {
+          .fold(TestHelper.handleError, (wa) {
         String wif = wa.value1;
         String address = wa.value2;
 
-        walletFactory.getWalletFromWif(wif).fold(handleError, (basicWallet) {
+        walletFactory.getWalletFromWif(wif).fold(TestHelper.handleError, (basicWallet) {
           expect(basicWallet.hexPublicKey, hexPublicKey);
           expect(basicWallet.wif, wif);
           expect(basicWallet.address, address);
@@ -90,18 +87,18 @@ void main() {
   test('can get full wallet from wif', () {
     final walletFactory    = WalletFactory();
 
-    walletFactory.generateKeyPair().fold(handleError, (kp){
+    walletFactory.generateKeyPair().fold(TestHelper.handleError, (kp){
       String hexPublicKey  = kp.hexPublicKey;
       String hexPrivateKey = kp.hexPrivateKey;
 
       Either.map2(walletFactory.generateWif(hexPrivateKey, 'M0'),
           walletFactory.generateAddress(hexPublicKey, 'M0'),
               (wif, address) => Tuple2(wif,address))
-          .fold(handleError, (wa){
+          .fold(TestHelper.handleError, (wa){
         String wif     = wa.value1;
         String address = wa.value2;
 
-        walletFactory.getFullWalletFromWif(wif).fold(handleError, (basicWallet){
+        walletFactory.getFullWalletFromWif(wif).fold(TestHelper.handleError, (basicWallet){
           expect(basicWallet.hexPrivateKey, hexPrivateKey);
           expect(basicWallet.hexPublicKey,  hexPublicKey);
           expect(basicWallet.wif,           wif);
@@ -113,8 +110,8 @@ void main() {
 
   test('can encrypt a wallet', () {
     final walletFactory = WalletFactory();
-    walletFactory.generateNewWallet(Network.testnet).fold(handleError,(basicWallet){
-      walletFactory.encryptWallet(basicWallet, "Passw0rd99").fold(handleError,(ew){
+    walletFactory.generateNewWallet(Network.testnet).fold(TestHelper.handleError,(basicWallet){
+      walletFactory.encryptWallet(basicWallet, "Passw0rd99").fold(TestHelper.handleError,(ew){
         expect(ew.address, basicWallet.address);
       });
     });
