@@ -190,22 +190,6 @@ class WalletFactory {
     }
   }
 
-  Future<Either<WalletError, EncryptedWallet>> encryptWallet2(BasicWallet wallet, String password) async {
-    try {
-      String walletJson = json.encode(wallet);
-
-      final cryptor = new PlatformStringCryptor();
-      final String salt = await cryptor.generateSalt();
-      final String key = await cryptor.generateKeyFromPassword(password, salt);
-      final String cipherText = await cryptor.encrypt(walletJson, key);
-
-      return right(EncryptedWallet("flutter",cipherText, wallet.address, salt));
-
-    } catch (e) {
-      return left(WalletError(e.toString()));
-    }
-  }
-
   Either<WalletError, Tuple2<String, String>> getPrivateKeyAndNetworkFromWif(
       String wif) {
     try {
