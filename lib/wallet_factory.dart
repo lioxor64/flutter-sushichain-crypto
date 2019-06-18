@@ -16,7 +16,6 @@ import "package:pointycastle/pointycastle.dart";
 import "package:pointycastle/random/fortuna_random.dart";
 import 'package:sushichain/full_wallet.dart';
 import 'package:sushichain/wallet_error.dart';
-import 'package:flutter_string_encryption/flutter_string_encryption.dart';
 
 import 'basic_wallet.dart';
 import 'encrypted_wallet.dart';
