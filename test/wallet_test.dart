@@ -161,8 +161,7 @@ void main() {
     if (maybeBasicWallet.isRight()) {
       BasicWallet basicWallet = maybeBasicWallet.toIterable().first;
 
-      Future<Either<WalletError, EncryptedWallet>> future = walletFactory.encryptWallet(basicWallet, "Passw0rd99");
-      Either<WalletError, EncryptedWallet> maybeEnc = await future;
+      Either<WalletError, EncryptedWallet> maybeEnc = walletFactory.encryptWallet(basicWallet, "Passw0rd99");
 
       if(maybeEnc.isRight()){
         EncryptedWallet wallet = maybeEnc.toIterable().first;

@@ -168,7 +168,7 @@ class WalletFactory {
     }
   }
 
-  Future<Either<WalletError, EncryptedWallet>> encryptWallet(BasicWallet wallet, String password) async {
+ Either<WalletError, EncryptedWallet> encryptWallet(BasicWallet wallet, String password) {
     try {
       String walletJson = json.encode(wallet);
 
