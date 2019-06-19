@@ -1,4 +1,4 @@
-import 'package:quiver/core.dart';
+import 'package:quiver_hashcode/hashcode.dart';
 
 class BasicWallet {
   String hexPublicKey;
