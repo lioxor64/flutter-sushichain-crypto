@@ -1,7 +1,7 @@
 name: sushichain
 description: Sushichain flutter crypto package
 version: 0.0.1
-author: Kingsley Hendrickse
+author: Kingsley Hendrickse <kingsley@sushichain.io>
 homepage: https://sushichain.io
 
 environment:
@@ -13,6 +13,9 @@ dependencies:
   pointycastle: '^1.0.1'
   dartz: '^0.8.4'
   crypto: '^2.0.6'
+  quiver: '>=2.0.0 <3.0.0'
+  convert: '^2.1.1'
+
 
 dev_dependencies:
   flutter_test:
