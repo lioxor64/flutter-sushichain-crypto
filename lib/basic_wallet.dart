@@ -1,3 +1,5 @@
+import 'package:quiver/core.dart';
+
 class BasicWallet {
   String hexPublicKey;
   String wif;
@@ -12,4 +14,12 @@ class BasicWallet {
 
   Map<String, dynamic> toJson() =>
       {'hexPublicKey': hexPublicKey, 'wif': wif, 'address': address};
+
+  bool operator ==(o) =>
+      o is BasicWallet &&
+      o.hexPublicKey == hexPublicKey &&
+      o.wif == wif &&
+      o.address == address;
+
+  int get hashCode => hash3(hexPublicKey.hashCode, wif.hashCode, address.hashCode);
 }

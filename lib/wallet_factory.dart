@@ -103,32 +103,15 @@ class WalletFactory {
 
   Either<WalletError, BasicWallet> getWalletFromWif(String wif) {
     try {
-      Either<WalletError, Tuple2<String, String>> maybeNetworkAndPrivateKey =
-          getPrivateKeyAndNetworkFromWif(wif);
-      if (maybeNetworkAndPrivateKey.isRight()) {
-        Tuple2<String, String> privateKeyNetwork =
-            maybeNetworkAndPrivateKey.toIterable().first;
-        String privateKey = privateKeyNetwork.value1;
-        String networkPrefix = privateKeyNetwork.value2;
-        Either<WalletError, String> maybePublicKey =
-            getPublicKeyFromPrivateKey(privateKey);
-        if (maybePublicKey.isRight()) {
-          String hexPublicKey = maybePublicKey.toIterable().first;
-          Either<WalletError, String> maybeAddress =
-              generateAddress(hexPublicKey, networkPrefix);
-          if (maybeAddress.isRight()) {
-            String address = maybeAddress.toIterable().first;
-            return right(BasicWallet(hexPublicKey, wif, address));
-          } else {
-            throw Exception(maybeAddress.swap().toIterable().first.message);
-          }
-        } else {
-          throw Exception(maybePublicKey.swap().toIterable().first.message);
-        }
-      } else {
-        throw Exception(
-            maybeNetworkAndPrivateKey.swap().toIterable().first.message);
-      }
+      return getPrivateKeyAndNetworkFromWif(wif).flatMap((nwpk){
+        String hexPrivateKey = nwpk.value1;
+        String networkPrefix = nwpk.value2;
+
+        return getPublicKeyFromPrivateKey(hexPrivateKey).flatMap( (hexPublicKey) {
+          return generateAddress(hexPublicKey, networkPrefix).map((address) =>
+              BasicWallet(hexPublicKey, wif, address));
+        });
+      });
     } catch (e) {
       return left(WalletError(e.toString()));
     }
@@ -136,33 +119,15 @@ class WalletFactory {
 
   Either<WalletError, FullWallet> getFullWalletFromWif(String wif) {
     try {
-      Either<WalletError, Tuple2<String, String>> maybeNetworkAndPrivateKey =
-          getPrivateKeyAndNetworkFromWif(wif);
-      if (maybeNetworkAndPrivateKey.isRight()) {
-        Tuple2<String, String> privateKeyNetwork =
-            maybeNetworkAndPrivateKey.toIterable().first;
-        String privateKey = privateKeyNetwork.value1;
-        String networkPrefix = privateKeyNetwork.value2;
-        Either<WalletError, String> maybePublicKey =
-            getPublicKeyFromPrivateKey(privateKey);
-        if (maybePublicKey.isRight()) {
-          String hexPublicKey = maybePublicKey.toIterable().first;
-          Either<WalletError, String> maybeAddress =
-              generateAddress(hexPublicKey, networkPrefix);
-          if (maybeAddress.isRight()) {
-            String address = maybeAddress.toIterable().first;
-            return right(FullWallet(
-                hexPublicKey, privateKey, wif, address, networkPrefix));
-          } else {
-            throw Exception(maybeAddress.swap().toIterable().first.message);
-          }
-        } else {
-          throw Exception(maybePublicKey.swap().toIterable().first.message);
-        }
-      } else {
-        throw Exception(
-            maybeNetworkAndPrivateKey.swap().toIterable().first.message);
-      }
+      return getPrivateKeyAndNetworkFromWif(wif).flatMap((nwpk){
+        String hexPrivateKey = nwpk.value1;
+        String networkPrefix = nwpk.value2;
+
+        return getPublicKeyFromPrivateKey(hexPrivateKey).flatMap( (hexPublicKey) {
+          return generateAddress(hexPublicKey, networkPrefix).map((address) =>
+              FullWallet(hexPublicKey, hexPrivateKey, wif, address, networkPrefix));
+        });
+      });
     } catch (e) {
       return left(WalletError(e.toString()));
     }

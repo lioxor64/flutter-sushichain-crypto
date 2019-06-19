@@ -102,26 +102,15 @@ void main() {
     });
   });
 
-//  test('can decrypt a wallet', () {
-//    final walletFactory = WalletFactory();
-//    Either<WalletError, BasicWallet> maybeBasicWallet =
-//    walletFactory.generateNewWallet(Network.testnet);
-//
-//    if (maybeBasicWallet.isRight()) {
-//      BasicWallet basicWallet = maybeBasicWallet.toIterable().first;
-//
-//      Either<WalletError, EncryptedWallet> maybeEnc = walletFactory.encryptWallet(basicWallet, "Passw0rd99");
-//
-//      if(maybeEnc.isRight()){
-//        EncryptedWallet wallet = maybeEnc.toIterable().first;
-//        print(wallet.toJson());
-//      } else {
-//        fail('Error: ' + maybeEnc.swap().toIterable().first.message);
-//      }
-//
-//    } else {
-//      fail('Error: ' + maybeBasicWallet.swap().toIterable().first.message);
-//    }
-//  });
+  test('can decrypt a wallet', () {
+    String password = "Passw0rd99";
+    walletFactory.generateNewWallet(Network.testnet).fold(TestHelper.handleError,(basicWallet){
+      walletFactory.encryptWallet(basicWallet, password).fold(TestHelper.handleError,(ew){
+        walletFactory.decryptWallet(ew, password).fold(TestHelper.handleError, (bw){
+          expect(bw, basicWallet);
+        });
+      });
+    });
+  });
 
 }
