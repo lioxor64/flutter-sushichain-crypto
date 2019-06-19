@@ -19,7 +19,7 @@ Add the dependency to your `pubspec.yaml`
 
 ```yaml
 dependencies:
-  sushichain: ^1.0.0
+  sushichain: ^0.0.1
 ```
 
 ## Example
