@@ -64,11 +64,22 @@ class WalletFactory {
   /// maybeWallet.fold(handleError, handleSuccess);
   Either<WalletError, BasicWallet> generateNewWallet(Network network) {
     try {
-      NetworkPrefix networkPrefix = NetworkUtil.networkPrefix(network);
-
+      NetworkPrefix networkPrefix          = NetworkUtil.networkPrefix(network);
       Either<WalletError, KeyPair> keyPair = generateKeyPair();
 
       return keyPair.flatMap((kp) => _toBasicWallet(networkPrefix, kp));
+    } catch (e) {
+      return left(WalletError(e.toString()));
+    }
+  }
+
+  /// Generates a new encrypted wallet for the specified network with the supplied password
+  ///
+  /// Either<WalletError, EncryptedWallet> maybeEncrypted = new WalletFactory().generateNewEncryptedWallet(Network.testnet, 'password');
+  /// maybeEncrypted.fold(handleError, handleSuccess);
+  Either<WalletError, EncryptedWallet> generateNewEncryptedWallet(Network network, String password) {
+    try {
+      return generateNewWallet(network).flatMap((bw) => encryptWallet(bw, password));
     } catch (e) {
       return left(WalletError(e.toString()));
     }

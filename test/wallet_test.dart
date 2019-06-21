@@ -1,5 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sushichain/basic_wallet.dart';
+import 'package:sushichain/encrypted_wallet.dart';
 import 'package:sushichain/model.dart';
 import 'package:sushichain/network.dart';
 import 'package:sushichain/wallet_factory.dart';
@@ -12,9 +14,16 @@ void main() {
 
   test('can generate a new wallet', () {
     walletFactory.generateNewWallet(Network.testnet).fold(TestHelper.handleError,(basicWallet){
+      expect(basicWallet,                           isA<BasicWallet>());
       expect(basicWallet.hexPublicKey.value.length, 130);
       expect(basicWallet.wif.value.length,          96);
       expect(basicWallet.address.value.length,      64);
+    });
+  });
+
+  test('can generate a new encrypted wallet', () {
+    walletFactory.generateNewEncryptedWallet(Network.testnet, 'Passw0rd99').fold(TestHelper.handleError,(ew){
+      expect(ew, isA<EncryptedWallet>());
     });
   });
 
@@ -100,6 +109,7 @@ void main() {
   test('can encrypt a wallet', () {
     walletFactory.generateNewWallet(Network.testnet).fold(TestHelper.handleError,(basicWallet){
       walletFactory.encryptWallet(basicWallet, "Passw0rd99").fold(TestHelper.handleError,(ew){
+        expect(ew,         isA<EncryptedWallet>());
         expect(ew.address, basicWallet.address);
       });
     });
