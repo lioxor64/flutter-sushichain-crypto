@@ -1,3 +1,4 @@
+/// Holds wallet errors
 class WalletError {
 
   String message;

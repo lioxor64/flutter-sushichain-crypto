@@ -20,11 +20,19 @@ import 'package:sushichain/wallet_error.dart';
 import 'basic_wallet.dart';
 import 'encrypted_wallet.dart';
 import 'keypair.dart';
+import 'model.dart';
 import 'network.dart';
 
 // https://iryanbell.com/2019-06-01-cryptographic-darts/
 
+/// WalletFactory has several functions that assist with SushiChain based
+/// crypto such as wallet generation, signing, verifying etc
 class WalletFactory {
+
+  /// Generates an ECDSA SECP256k1 key pair
+  ///
+  /// Either<WalletError, KeyPair> maybeKeyPair = new WalletFactory().generateKeyPair();
+  /// maybeKeyPair.fold(handleError, handleSuccess);
   Either<WalletError, KeyPair> generateKeyPair() {
     try {
       var keyParams = ECKeyGeneratorParameters(ECCurve_secp256k1());
@@ -40,7 +48,7 @@ class WalletFactory {
 
       KeyPair kp = KeyPair(keyPair);
 
-      if ((kp.hexPublicKey.length != 130) || kp.hexPrivateKey.length != 64) {
+      if ((kp.hexPublicKey.value.length != 130) || kp.hexPrivateKey.value.length != 64) {
         return generateKeyPair();
       }
 
@@ -50,9 +58,13 @@ class WalletFactory {
     }
   }
 
+  /// Generates a new wallet for the network provided
+  ///
+  /// Either<WalletError, BasicWallet> maybeWallet = new WalletFactory().generateNewWallet(Network.testnet);
+  /// maybeWallet.fold(handleError, handleSuccess);
   Either<WalletError, BasicWallet> generateNewWallet(Network network) {
     try {
-      String networkPrefix = NetworkUtil.networkToString(network);
+      NetworkPrefix networkPrefix = NetworkUtil.networkPrefix(network);
 
       Either<WalletError, KeyPair> keyPair = generateKeyPair();
 
@@ -63,49 +75,61 @@ class WalletFactory {
   }
 
   Either<WalletError, BasicWallet> _toBasicWallet(
-      String networkPrefix, KeyPair keyPair) {
-    String hexPublicKey = keyPair.hexPublicKey;
-    String hexPrivateKey = keyPair.hexPrivateKey;
+      NetworkPrefix networkPrefix, KeyPair keyPair) {
+    HexPublicKey hexPublicKey = keyPair.hexPublicKey;
+    HexPrivateKey hexPrivateKey = keyPair.hexPrivateKey;
 
-    Either<WalletError, String> maybeWif =
+    Either<WalletError, Wif> maybeWif =
         generateWif(hexPrivateKey, networkPrefix);
-    Either<WalletError, String> maybeAddress =
+    Either<WalletError, Address> maybeAddress =
         generateAddress(hexPublicKey, networkPrefix);
 
     return Either.map2(maybeWif, maybeAddress,
         (wif, address) => BasicWallet(hexPublicKey, wif, address));
   }
 
-  Either<WalletError, String> generateWif(
-      String hexPrivateKey, String networkPrefix) {
+  /// Generates a WIF given a hexPrivateKey and target network
+  ///
+  /// Either<WalletError, String> maybeWif = new WalletFactory().generateWif(hexPrivateKey, Network.testnet);
+  /// maybeWif.fold(handleError, handleSuccess);
+  Either<WalletError, Wif> generateWif(
+      HexPrivateKey hexPrivateKey, NetworkPrefix networkPrefix) {
     try {
-      String networkKey = networkPrefix + hexPrivateKey;
+      String networkKey = networkPrefix.value + hexPrivateKey.value;
       String hashedKey = _toSha256(_toSha256(networkKey));
       String checkSum = hashedKey.substring(0, 6);
-      return right(_toBase64(networkKey + checkSum));
+      return right(Wif(_toBase64(networkKey + checkSum)));
     } catch (e) {
       return left(WalletError(e.toString()));
     }
   }
 
-  Either<WalletError, String> generateAddress(
-      String hexPublicKey, String networkPrefix) {
+  /// Generates an address given a hexPublicKey and target network
+  ///
+  /// Either<WalletError, Address> maybeAddress = new WalletFactory().generateAddress(hexPublicKey, Network.testnet);
+  /// maybeAddress.fold(handleError, handleSuccess);
+  Either<WalletError, Address> generateAddress(
+      HexPublicKey hexPublicKey, NetworkPrefix networkPrefix) {
     try {
-      String hashedAddress = _toRipeMd160(_toSha256(hexPublicKey));
-      String networkAddress = networkPrefix + hashedAddress;
+      String hashedAddress = _toRipeMd160(_toSha256(hexPublicKey.value));
+      String networkAddress = networkPrefix.value + hashedAddress;
       String hashedAddressAgain = _toSha256(_toSha256(networkAddress));
       String checksum = hashedAddressAgain.substring(0, 6);
-      return right(_toBase64(networkAddress + checksum));
+      return right(Address(_toBase64(networkAddress + checksum)));
     } catch (e) {
       return left(WalletError(e.toString()));
     }
   }
 
-  Either<WalletError, BasicWallet> getWalletFromWif(String wif) {
+  /// Gets a wallet from the supplied wif
+  ///
+  /// Either<WalletError, BasicWallet> maybeWallet = new WalletFactory().getWalletFromWif(wif);
+  /// maybeWallet.fold(handleError, handleSuccess);
+  Either<WalletError, BasicWallet> getWalletFromWif(Wif wif) {
     try {
       return getPrivateKeyAndNetworkFromWif(wif).flatMap((nwpk){
-        String hexPrivateKey = nwpk.value1;
-        String networkPrefix = nwpk.value2;
+        HexPrivateKey hexPrivateKey = nwpk.value1;
+        NetworkPrefix networkPrefix = nwpk.value2;
 
         return getPublicKeyFromPrivateKey(hexPrivateKey).flatMap( (hexPublicKey) {
           return generateAddress(hexPublicKey, networkPrefix).map((address) =>
@@ -117,11 +141,15 @@ class WalletFactory {
     }
   }
 
-  Either<WalletError, FullWallet> getFullWalletFromWif(String wif) {
+  /// Gets a full wallet from the supplied wif
+  ///
+  /// Either<WalletError, FullWallet> maybeWallet = new WalletFactory().getFullWalletFromWif(wif);
+  /// maybeWallet.fold(handleError, handleSuccess);
+  Either<WalletError, FullWallet> getFullWalletFromWif(Wif wif) {
     try {
       return getPrivateKeyAndNetworkFromWif(wif).flatMap((nwpk){
-        String hexPrivateKey = nwpk.value1;
-        String networkPrefix = nwpk.value2;
+        HexPrivateKey hexPrivateKey = nwpk.value1;
+        NetworkPrefix networkPrefix = nwpk.value2;
 
         return getPublicKeyFromPrivateKey(hexPrivateKey).flatMap( (hexPublicKey) {
           return generateAddress(hexPublicKey, networkPrefix).map((address) =>
@@ -133,6 +161,10 @@ class WalletFactory {
     }
   }
 
+  /// Encrypts a wallet
+  ///
+  /// Either<WalletError, EncryptedWallet> maybeEncrypted = new WalletFactory().encryptWallet(wallet, password);
+  /// maybeEncrypted.fold(handleError, handleSuccess);
   Either<WalletError, EncryptedWallet> encryptWallet(
       BasicWallet wallet, String password) {
     try {
@@ -149,18 +181,22 @@ class WalletFactory {
       String cipherText = hex.encode(encrypted);
 
       return right(EncryptedWallet(
-          "flutter", cipherText, wallet.address, hex.encode(iv)));
+          Source("flutter"), CipherText(cipherText), wallet.address, Salt(hex.encode(iv))));
     } catch (e) {
       return left(WalletError(e.toString()));
     }
   }
 
+  /// Decrypts a wallet
+  ///
+  /// Either<WalletError, BasicWallet> maybeWallet = new WalletFactory().decryptWallet(encryptedWallet, password);
+  /// maybeWallet.fold(handleError, handleSuccess);
   Either<WalletError, BasicWallet> decryptWallet(
       EncryptedWallet wallet, String password) {
     try {
       var key = _toSha256I(password);
-      var iv = hex.decode(wallet.salt);
-      var message = hex.decode(wallet.cipherText);
+      var iv = hex.decode(wallet.salt.value);
+      var message = hex.decode(wallet.cipherText.value);
 
       CipherParameters params = new PaddedBlockCipherParameters(
           new ParametersWithIV(new KeyParameter(key), iv), null);
@@ -176,26 +212,34 @@ class WalletFactory {
     }
   }
 
-  Either<WalletError, Tuple2<String, String>> getPrivateKeyAndNetworkFromWif(
-      String wif) {
+  /// Gets the hexPrivateKey and the network from a wif
+  ///
+  /// Either<WalletError, Tuple2<String, String>> maybeResult = new WalletFactory().getPrivateKeyAndNetworkFromWif(wif);
+  /// maybeResult.fold(handleError, handleSuccess);
+  Either<WalletError, Tuple2<HexPrivateKey, NetworkPrefix>> getPrivateKeyAndNetworkFromWif(
+      Wif wif) {
     try {
-      String decodedWif = _fromBase64(wif);
-      String networkPrefix = decodedWif.substring(0, 2);
-      String hexPrivateKey = decodedWif.substring(2, decodedWif.length - 6);
+      String decodedWif           = _fromBase64(wif.value);
+      NetworkPrefix networkPrefix = NetworkPrefix(decodedWif.substring(0, 2));
+      HexPrivateKey hexPrivateKey = HexPrivateKey(decodedWif.substring(2, decodedWif.length - 6));
       return right(Tuple2(hexPrivateKey, networkPrefix));
     } catch (e) {
       return left(WalletError(e.toString()));
     }
   }
 
-  Either<WalletError, String> getPublicKeyFromPrivateKey(String hexPrivateKey) {
+  /// Gets the hexPublicKey from the hexPrivateKey
+  ///
+  /// Either<WalletError, HexPublicKey> maybeKey = new WalletFactory().getPublicKeyFromPrivateKey(hexPrivateKey);
+  /// maybeKey.fold(handleError, handleSuccess);
+  Either<WalletError, HexPublicKey> getPublicKeyFromPrivateKey(HexPrivateKey hexPrivateKey) {
     try {
       ECKeyGeneratorParameters keyParams =
           ECKeyGeneratorParameters(ECCurve_secp256k1());
-      BigInt privateKey = BigInt.parse(hexPrivateKey, radix: 16);
+      BigInt privateKey = BigInt.parse(hexPrivateKey.value, radix: 16);
       ECPoint point = keyParams.domainParameters.G * privateKey;
       Uint8List encodedPoint = point.getEncoded(false);
-      return right(hex.encode(encodedPoint));
+      return right(HexPublicKey(hex.encode(encodedPoint)));
     } catch (e) {
       return left(WalletError(e.toString()));
     }

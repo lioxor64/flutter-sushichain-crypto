@@ -1,15 +1,22 @@
+import 'model.dart';
+
+/// The network
+/// * mainnet
+/// * testnet
 enum Network {
   testnet,
   mainnet
 }
 
+/// Given a Network enum it returns the prefix
+/// e.g. 'M0' or 'T0'
 class NetworkUtil {
-  static networkToString(Network network) {
+  static networkPrefix(Network network) {
     switch (network) {
       case Network.mainnet:
-        return "M0";
+        return NetworkPrefix("M0");
       default:
-        return "T0";
+        return NetworkPrefix("T0");
     }
   }
 }
