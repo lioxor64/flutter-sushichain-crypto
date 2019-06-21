@@ -2,7 +2,7 @@
 
 * Initial release with core sushichain crypto
 
-#### 0.0.1
+#### 0.0.2
 
 * Refactor to use tiny types
 * Documented the code a bit
